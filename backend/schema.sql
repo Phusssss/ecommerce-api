@@ -1,0 +1,9 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS users(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name TEXT NOT NULL,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,role TEXT DEFAULT 'customer',created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS categories(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name TEXT NOT NULL,slug TEXT UNIQUE NOT NULL);
+CREATE TABLE IF NOT EXISTS products(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name TEXT NOT NULL,slug TEXT UNIQUE NOT NULL,description TEXT,price NUMERIC(14,2) NOT NULL,stock INT DEFAULT 0,image_url TEXT,category_id UUID REFERENCES categories(id),created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS cart_items(user_id UUID REFERENCES users(id) ON DELETE CASCADE,product_id UUID REFERENCES products(id) ON DELETE CASCADE,quantity INT CHECK(quantity>0),PRIMARY KEY(user_id,product_id));
+CREATE TABLE IF NOT EXISTS orders(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID REFERENCES users(id),total NUMERIC(14,2),status TEXT DEFAULT 'pending',shipping_name TEXT,shipping_phone TEXT,shipping_address TEXT,created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS order_items(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),order_id UUID REFERENCES orders(id) ON DELETE CASCADE,product_id UUID,product_name TEXT,unit_price NUMERIC(14,2),quantity INT);
+INSERT INTO categories(name,slug) VALUES('Nông sản','nong-san'),('Cà phê','ca-phe'),('Rau củ','rau-cu') ON CONFLICT(slug) DO NOTHING;
+INSERT INTO products(name,slug,description,price,stock,image_url,category_id) SELECT 'Cà phê Arabica Đà Lạt','arabica-da-lat','Cà phê rang mộc',185000,100,'https://images.unsplash.com/photo-1447933601403-0c6688de566e',id FROM categories WHERE slug='ca-phe' ON CONFLICT(slug) DO NOTHING;
